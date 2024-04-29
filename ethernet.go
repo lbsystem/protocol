@@ -115,6 +115,11 @@ func (e *Ethernet) UnmarshalBinary(data []byte) error {
 	} else {
 		// e.VLANID = *new(VLAN)
 		e.VLANID.VID = 0
+		e.VLANID.DEI = 0
+		e.VLANID.PCP = 0
+		// vlan protocal id x8100
+		e.VLANID.TPID = 0
+
 	}
 	n += 2
 

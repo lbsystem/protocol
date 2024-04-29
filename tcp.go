@@ -40,16 +40,12 @@ func (t *TCP) MarshalBinary() (data []byte, err error) {
 	binary.BigEndian.PutUint16(data[2:4], t.PortDst)
 	binary.BigEndian.PutUint32(data[4:8], t.SeqNum)
 	binary.BigEndian.PutUint32(data[8:12], t.AckNum)
-
 	data[12] = (t.HdrLen << 4) & 0xf0
 	data[13] = t.Code & 0x3f
-
 	binary.BigEndian.PutUint16(data[14:16], t.WinSize)
 	binary.BigEndian.PutUint16(data[16:18], t.Checksum)
 	binary.BigEndian.PutUint16(data[18:20], t.UrgFlag)
-
 	copy(data[20:], t.Data)
-
 	return
 }
 
