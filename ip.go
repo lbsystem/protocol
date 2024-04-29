@@ -164,5 +164,5 @@ func (i *IPv4) UnmarshalBinary(data []byte) error {
 	default:
 		i.Data = new(util.Buffer)
 	}
-	return i.Data.UnmarshalBinary(data[n:])
+	return i.Data.UnmarshalBinary(data[n:i.Length])
 }

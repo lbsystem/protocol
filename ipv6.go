@@ -194,7 +194,7 @@ checkXHeader:
 			break checkXHeader
 		}
 	}
-	return i.Data.UnmarshalBinary(data[n:])
+	return i.Data.UnmarshalBinary(data[n:i.Length])
 }
 
 type Option struct {
