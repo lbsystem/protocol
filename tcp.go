@@ -55,25 +55,20 @@ func (t *TCP) MarshalBinary() (data []byte, err error) {
 
 func (t *TCP) UnmarshalBinary(data []byte) error {
 	if len(data) < 20 {
-		return errors.New("The []byte is too short to unmarshal a full ARP message.")
+		return errors.New("The []byte is too short to unmarshal a full TCP message.")
 	}
 	t.PortSrc = binary.BigEndian.Uint16(data[:2])
 	t.PortDst = binary.BigEndian.Uint16(data[2:4])
 	t.SeqNum = binary.BigEndian.Uint32(data[4:8])
 	t.AckNum = binary.BigEndian.Uint32(data[8:12])
-
 	t.HdrLen = (data[12] >> 4) & 0xf
 	t.Code = data[13] & 0x3f
-
 	t.WinSize = binary.BigEndian.Uint16(data[14:16])
 	t.Checksum = binary.BigEndian.Uint16(data[16:18])
 	t.UrgFlag = binary.BigEndian.Uint16(data[18:20])
-
 	if len(data) > 20 {
-		t.Data = make([]byte, (len(data) - 20))
-		copy(t.Data, data[20:])
+		t.Data = data[20:]
 	}
-
 	return nil
 
 }

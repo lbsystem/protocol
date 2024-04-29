@@ -3,6 +3,7 @@ package protocol
 import (
 	"encoding/binary"
 	"errors"
+
 	"net"
 
 	"antrea.io/libOpenflow/util"
@@ -28,11 +29,13 @@ type IPv6 struct {
 	FragmentHeader *FragmentHeader
 	Data           util.Message
 	tempUDP        *UDP
+	tempTCP        *TCP
 }
 
 func NewIPv6() *IPv6 {
 	ip6 := new(IPv6)
 	ip6.tempUDP = NewUDP()
+	ip6.tempTCP = NewTCP()
 	return ip6
 }
 func (i *IPv6) Len() (n uint16) {
@@ -179,6 +182,12 @@ checkXHeader:
 			break checkXHeader
 		case Type_UDP:
 			i.Data = i.tempUDP
+			break checkXHeader
+		case Type_TCP:
+			i.Data = i.tempTCP
+			break checkXHeader
+		case Type_ICMP:
+			i.Data = NewICMP()
 			break checkXHeader
 		default:
 			i.Data = new(util.Buffer)

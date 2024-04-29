@@ -107,3 +107,55 @@ func BenchmarkUnmarshalIPv6UDP(b *testing.B) {
 		}
 	}
 }
+func prepareIPv6TCPFrame() []byte {
+	dstMAC := []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
+	srcMAC := []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}
+	etherType := []byte{0x86, 0xDD} // IPv6 的以太网类型
+
+	// IPv6头部
+	ipv6Header := make([]byte, 40)
+	ipv6Header[0] = 0x60
+	ipv6Header[1] = 0x00
+	binary.BigEndian.PutUint32(ipv6Header[2:6], 0)
+	ipv6Header[6] = 6 // TCP
+	ipv6Header[7] = 64
+	copy(ipv6Header[8:24], net.ParseIP("2001:0db8::1"))
+	copy(ipv6Header[24:40], net.ParseIP("2001:0db8::2"))
+
+	// TCP头部
+	tcpHeader := make([]byte, 20)
+	binary.BigEndian.PutUint16(tcpHeader[0:2], 12345)
+	binary.BigEndian.PutUint16(tcpHeader[2:4], 80)
+	binary.BigEndian.PutUint32(tcpHeader[4:8], 1)       // 序号
+	binary.BigEndian.PutUint32(tcpHeader[8:12], 0)      // 确认序号
+	tcpHeader[12] = 80                                  // 数据偏移和保留位
+	tcpHeader[13] = 2                                   // SYN标志位
+	binary.BigEndian.PutUint16(tcpHeader[14:16], 65535) // 窗口大小
+	binary.BigEndian.PutUint16(tcpHeader[16:18], 0)     // 校验和
+	binary.BigEndian.PutUint16(tcpHeader[18:20], 0)     // 紧急指针
+
+	// TCP数据
+	tcpData := []byte("Hello, World from IPv6 TCP")
+
+	// 组装完整的以太网帧
+	frame := append(dstMAC, srcMAC...)
+	frame = append(frame, etherType...)
+	frame = append(frame, ipv6Header...)
+	frame = append(frame, tcpHeader...)
+	frame = append(frame, tcpData...)
+
+	return frame
+}
+
+// BenchmarkUnmarshalIPv6TCP 测试解析IPv6 TCP Ethernet帧的性能
+func BenchmarkUnmarshalIPv6TCP(b *testing.B) {
+	data := prepareIPv6TCPFrame()
+	eth := protocol.NewEthernet()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := eth.UnmarshalBinary(data); err != nil {
+			b.Fatal(err)
+		}
+	}
+}

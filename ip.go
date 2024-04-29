@@ -159,6 +159,8 @@ func (i *IPv4) UnmarshalBinary(data []byte) error {
 		i.Data = i.tempICMP
 	case Type_UDP:
 		i.Data = i.tempUDP
+	case Type_TCP:
+		i.Data = i.tempTCP
 	default:
 		i.Data = new(util.Buffer)
 	}
