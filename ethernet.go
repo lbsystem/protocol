@@ -29,6 +29,9 @@ type Ethernet struct {
 	VLANID    VLAN
 	Ethertype uint16
 	Data      util.Message
+	tempIPv4  *IPv4
+	tempIPV6  *IPv6
+	tempARP   *ARP
 }
 
 func NewEthernet() *Ethernet {
@@ -38,6 +41,10 @@ func NewEthernet() *Ethernet {
 	eth.VLANID = *NewVLAN()
 	eth.Ethertype = 0x800
 	eth.Data = nil
+	eth.tempIPv4 = NewIPv4()
+	eth.tempARP = new(ARP)
+	eth.tempIPV6 = NewIPv6()
+
 	return eth
 }
 
@@ -88,16 +95,16 @@ func (e *Ethernet) UnmarshalBinary(data []byte) error {
 		return errors.New("The []byte is too short to unmarshal a full Ethernet message.")
 	}
 	n := 0
-	e.HWDst = net.HardwareAddr(make([]byte, 6))
-	copy(e.HWDst, data[n:n+6])
+	e.HWDst = net.HardwareAddr(data[n : n+6])
+
 	n += 6
-	e.HWSrc = net.HardwareAddr(make([]byte, 6))
-	copy(e.HWSrc, data[n:n+6])
+	e.HWSrc = net.HardwareAddr(data[n : n+6])
+
 	n += 6
 
 	e.Ethertype = binary.BigEndian.Uint16(data[n:])
 	if e.Ethertype == VLAN_MSG {
-		e.VLANID = *new(VLAN)
+		// e.VLANID = *new(VLAN)
 		err := e.VLANID.UnmarshalBinary(data[n:])
 		if err != nil {
 			return err
@@ -106,18 +113,18 @@ func (e *Ethernet) UnmarshalBinary(data []byte) error {
 
 		e.Ethertype = binary.BigEndian.Uint16(data[n:])
 	} else {
-		e.VLANID = *new(VLAN)
+		// e.VLANID = *new(VLAN)
 		e.VLANID.VID = 0
 	}
 	n += 2
 
 	switch e.Ethertype {
 	case IPv4_MSG:
-		e.Data = new(IPv4)
+		e.Data = e.tempIPv4
 	case IPv6_MSG:
-		e.Data = new(IPv6)
+		e.Data = e.tempIPV6
 	case ARP_MSG:
-		e.Data = new(ARP)
+		e.Data = e.tempARP
 	default:
 		e.Data = new(util.Buffer)
 	}

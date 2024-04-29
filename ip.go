@@ -33,6 +33,9 @@ type IPv4 struct {
 	NWDst          net.IP
 	Options        util.Buffer
 	Data           util.Message
+	tempUDP        *UDP
+	tempTCP        *TCP
+	tempICMP       *ICMP
 }
 
 func NewIPv4() *IPv4 {
@@ -40,6 +43,9 @@ func NewIPv4() *IPv4 {
 	ip.NWSrc = make([]byte, 4)
 	ip.NWDst = make([]byte, 4)
 	ip.Options = *new(util.Buffer)
+	ip.tempUDP = NewUDP()
+	ip.tempTCP = NewTCP()
+	ip.tempICMP = NewICMP()
 	return ip
 }
 
@@ -135,24 +141,24 @@ func (i *IPv4) UnmarshalBinary(data []byte) error {
 	n += 1
 	i.Checksum = binary.BigEndian.Uint16(data[n:])
 	n += 2
-	i.NWSrc = make([]byte, 4)
-	copy(i.NWSrc, data[n:n+4])
+	i.NWSrc = data[n : n+4]
 	n += 4
-	i.NWDst = make([]byte, 4)
-	copy(i.NWDst, data[n:n+4])
-	n += 4
+	i.NWDst = data[n : n+4]
 
-	err := i.Options.UnmarshalBinary(data[n:int(i.IHL*4)])
-	if err != nil {
-		return err
+	n += 4
+	if i.IHL*4 > 20 {
+		err := i.Options.UnmarshalBinary(data[n:int(i.IHL*4)])
+		if err != nil {
+			return err
+		}
+		n += int(i.IHL*4) - n
 	}
-	n += int(i.IHL*4) - n
 
 	switch i.Protocol {
 	case Type_ICMP:
-		i.Data = NewICMP()
+		i.Data = i.tempICMP
 	case Type_UDP:
-		i.Data = NewUDP()
+		i.Data = i.tempUDP
 	default:
 		i.Data = new(util.Buffer)
 	}

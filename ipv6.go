@@ -27,8 +27,14 @@ type IPv6 struct {
 	RoutingHeader  *RoutingHeader
 	FragmentHeader *FragmentHeader
 	Data           util.Message
+	tempUDP        *UDP
 }
 
+func NewIPv6() *IPv6 {
+	ip6 := new(IPv6)
+	ip6.tempUDP = NewUDP()
+	return ip6
+}
 func (i *IPv6) Len() (n uint16) {
 	length := uint16(40)
 	if i.HbhHeader != nil {
@@ -128,11 +134,11 @@ func (i *IPv6) UnmarshalBinary(data []byte) error {
 	n += 1
 	i.HopLimit = data[n]
 	n += 1
-	i.NWSrc = make([]byte, 16)
-	copy(i.NWSrc, data[n:n+16])
+	i.NWSrc = data[n : n+16]
+
 	n += 16
-	i.NWDst = make([]byte, 16)
-	copy(i.NWDst, data[n:n+16])
+	i.NWDst = data[n : n+16]
+
 	n += 16
 
 	checkExtHeader := true
@@ -172,7 +178,7 @@ checkXHeader:
 			i.Data = NewICMPv6ByHeaderType(packetType)
 			break checkXHeader
 		case Type_UDP:
-			i.Data = NewUDP()
+			i.Data = i.tempUDP
 			break checkXHeader
 		default:
 			i.Data = new(util.Buffer)
